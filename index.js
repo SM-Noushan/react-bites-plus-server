@@ -1,4 +1,6 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -14,6 +16,20 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
+
+// my middleware
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.access_token;
+  // no token
+  if (!token) return res.status(401).send({ message: "Unauthorized Access" });
+  // verify token
+  jwt.verify(token, process.env.Access_Token_Secret, (err, decoded) => {
+    if (err) return res.status(401).send({ message: "Unauthorized Access" });
+    res.user = decoded;
+    next();
+  });
+};
 
 // database link
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.b6wqjn1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -29,15 +45,26 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    console.log(
-      "Successfully connected to MongoDB!"
-    );
+    console.log("Successfully connected to MongoDB!");
 
     // Connect to the "car-doctor" database
     const bitesPlus = client.db("bites-plus");
     const foodsCollection = bitesPlus.collection("foodCollection");
-    
 
+    //auth api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.Access_Token_Secret, {
+        expiresIn: "1hr",
+      });
+      res.cookie("access_token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+      });
+      res.send({ status: true });
+    });
+    
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
