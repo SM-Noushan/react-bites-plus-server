@@ -51,7 +51,7 @@ async function run() {
     const bitesPlus = client.db("bites-plus");
     const foodsCollection = bitesPlus.collection("foodCollection");
 
-    //auth api
+    //auth api - set token on sign in
     app.post("/jwt", async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.Access_Token_Secret, {
@@ -64,7 +64,15 @@ async function run() {
       });
       res.send({ status: true });
     });
-    
+
+    //auth api - clear token on sign out
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.Access_Token_Secret, {
+        expiresIn: "1hr",
+      });
+      res.clearCookie("access_token", { maxAge: 0 }).send({ status: true });
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
