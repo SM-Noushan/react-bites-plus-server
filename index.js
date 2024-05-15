@@ -93,12 +93,37 @@ async function run() {
     });
     // get foods data
     app.get("/foods", verifyToken, async (req, res) => {
-      if (res.user?.email !== req.query?.email)
+      const featured = req.query?.featured;
+      const email = req.query?.email;
+      if (email && res.user?.email !== email)
         return res.status(403).send({ message: "Forbidden Access" });
-      console.log("Foods >>", req.query?.email);
       let query = {};
-      if (req.query?.email) query = { donatorEmail: req.query.email };
-      const result = await foodsCollection.find(query).toArray();
+      let result = null;
+      // let options = {};
+      if (email) query = { donatorEmail: email };
+      // console.log(featured);
+      if (featured)
+        result = await foodsCollection
+          .aggregate([
+            {
+              $addFields: {
+                numericQuantity: { $toDouble: "$foodQuantity" },
+              },
+            },
+            {
+              $sort: { numericQuantity: -1 },
+            },
+            {
+              $limit: 6,
+            },
+            {
+              $project: {
+                numericQuantity: 0,
+              },
+            },
+          ])
+          .toArray();
+      else result = await foodsCollection.find(query).toArray();
       res.send(result);
     });
 
