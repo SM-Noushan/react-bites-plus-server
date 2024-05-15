@@ -76,18 +76,29 @@ async function run() {
     // foods apis
     // get single data
     app.get("/food/:id", async (req, res) => {
-      console.log("get id");
       const id = req.params.id;
+      const details = req.query?.details;
+      const request = req.query?.request;
       const query = { _id: new ObjectId(id) };
       let options = {};
-      options = {
-        projection: {
-          donatorEmail: 0,
-          donatorName: 0,
-          donatorUID: 0,
-          donatorPhotoURL: 0,
-        },
-      };
+      if (details || request)
+        options = {
+          projection: {
+            additionalNotes: 0,
+            donatorUID: 0,
+            donatorPhotoURL: 0,
+            _id: 0,
+          },
+        };
+      else
+        options = {
+          projection: {
+            donatorEmail: 0,
+            donatorName: 0,
+            donatorUID: 0,
+            donatorPhotoURL: 0,
+          },
+        };
       const result = await foodsCollection.findOne(query, options);
       res.send(result);
     });
@@ -100,11 +111,15 @@ async function run() {
       let query = {};
       let result = null;
       // let options = {};
-      if (email) query = { donatorEmail: email };
       // console.log(featured);
       if (featured)
         result = await foodsCollection
           .aggregate([
+            {
+              $match: {
+                foodStatus: { $eq: "Available" },
+              },
+            },
             {
               $addFields: {
                 numericQuantity: { $toDouble: "$foodQuantity" },
@@ -123,7 +138,14 @@ async function run() {
             },
           ])
           .toArray();
-      else result = await foodsCollection.find(query).toArray();
+      else {
+        if (email) query = { donatorEmail: email };
+        else
+          query = {
+            foodStatus: { $eq: "Available" },
+          };
+        result = await foodsCollection.find(query).toArray();
+      }
       res.send(result);
     });
 
