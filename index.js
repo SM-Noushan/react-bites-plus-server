@@ -69,19 +69,28 @@ async function run() {
 
     //clear token on sign out
     app.post("/signout", async (req, res) => {
-      console.log("signout");
       const user = req.body;
       res.clearCookie("access_token", { maxAge: 0 }).send({ status: true });
     });
 
-    // bookings apis
+    // foods apis
+    // get foods data
+    app.get("/foods", verifyToken, async (req, res) => {
+      if (res.user?.email !== req.query?.email)
+        return res.status(403).send({ message: "Forbidden Access" });
+      console.log("Foods >>", req.query?.email);
+      let query = {};
+      if (req.query?.email) query = { donatorEmail: req.query.email };
+      const result = await foodsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // store food data
-    app.post("/food", async (req, res) => {
+    app.post("/food", verifyToken, async (req, res) => {
       const data = req.body;
       const result = await foodsCollection.insertOne(data);
       res.send(result);
     });
-    
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
