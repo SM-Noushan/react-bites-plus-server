@@ -86,9 +86,17 @@ async function run() {
     });
 
     // store food data
-    app.post("/food", verifyToken, async (req, res) => {
+    app.post("/food", async (req, res) => {
       const data = req.body;
       const result = await foodsCollection.insertOne(data);
+      res.send(result);
+    });
+
+    // delete food data
+    app.delete("/food/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await foodsCollection.deleteOne(query);
       res.send(result);
     });
   } finally {
