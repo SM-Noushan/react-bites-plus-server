@@ -81,7 +81,12 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       let options = {};
       options = {
-        projection: { donatorEmail: 0, donatorName: 0, donatorUID: 0, donatorPhotoURL: 0 },
+        projection: {
+          donatorEmail: 0,
+          donatorName: 0,
+          donatorUID: 0,
+          donatorPhotoURL: 0,
+        },
       };
       const result = await foodsCollection.findOne(query, options);
       res.send(result);
@@ -101,6 +106,18 @@ async function run() {
     app.post("/food", async (req, res) => {
       const data = req.body;
       const result = await foodsCollection.insertOne(data);
+      res.send(result);
+    });
+
+    // update food data
+    app.put("/food/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedData = req.body;
+      const updateQuery = {
+        $set: updatedData,
+      };
+      const result = await foodsCollection.updateOne(filter, updateQuery);
       res.send(result);
     });
 
