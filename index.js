@@ -107,6 +107,9 @@ async function run() {
       const featured = req.query?.featured;
       const email = req.query?.email;
       const request = req.query?.request;
+      const search = req.query?.search;
+      const filter = req.query?.filter;
+      console.log("search value: ", search);
       // if (email && res.user?.email !== email)
       //   return res.status(403).send({ message: "Forbidden Access" });
       let query = {};
@@ -142,11 +145,14 @@ async function run() {
       else {
         if (email && !request) query = { donatorEmail: email };
         else if (request) query = { requesterEmail: email };
-        else
+        else {
+          console.log(filter);
+          // const query = { title: { $regex: searchTerm, $options: 'i' } };
           query = {
+            foodName: { $regex: search, $options: "i" },
             foodStatus: { $eq: "Available" },
           };
-        console.log(query);
+        }
         result = await foodsCollection.find(query).toArray();
       }
       res.send(result);
