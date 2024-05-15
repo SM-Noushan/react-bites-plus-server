@@ -74,6 +74,18 @@ async function run() {
     });
 
     // foods apis
+    // get single data
+    app.get("/food/:id", async (req, res) => {
+      console.log("get id");
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      let options = {};
+      options = {
+        projection: { donatorEmail: 0, donatorName: 0, donatorUID: 0, donatorPhotoURL: 0 },
+      };
+      const result = await foodsCollection.findOne(query, options);
+      res.send(result);
+    });
     // get foods data
     app.get("/foods", verifyToken, async (req, res) => {
       if (res.user?.email !== req.query?.email)
