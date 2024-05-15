@@ -109,13 +109,11 @@ async function run() {
       const request = req.query?.request;
       const search = req.query?.search;
       const filter = req.query?.filter;
-      console.log("search value: ", search);
       // if (email && res.user?.email !== email)
       //   return res.status(403).send({ message: "Forbidden Access" });
       let query = {};
+      let sort = {};
       let result = null;
-      // let options = {};
-      // console.log(featured);
       if (featured)
         result = await foodsCollection
           .aggregate([
@@ -146,14 +144,13 @@ async function run() {
         if (email && !request) query = { donatorEmail: email };
         else if (request) query = { requesterEmail: email };
         else {
-          console.log(filter);
-          // const query = { title: { $regex: searchTerm, $options: 'i' } };
           query = {
             foodName: { $regex: search, $options: "i" },
             foodStatus: { $eq: "Available" },
           };
+          if (filter != 0) sort = { expireDate: filter };
         }
-        result = await foodsCollection.find(query).toArray();
+        result = await foodsCollection.find(query).sort(sort).toArray();
       }
       res.send(result);
     });
