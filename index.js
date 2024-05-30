@@ -11,12 +11,22 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://ph-assignment-11-bites-plus-spa.surge.sh",
+    ],
     credentials: true,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
+
+// cookie
+const cookieOption = {
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  secure: process.env.NODE_ENV === "production" ? true : false,
+};
 
 // my middleware
 const verifyToken = (req, res, next) => {
@@ -47,7 +57,7 @@ async function run() {
   try {
     console.log("Successfully connected to MongoDB!");
 
-    // Connect to the "car-doctor" database
+    // Connect to the "bites-plus" database
     const bitesPlus = client.db("bites-plus");
     const foodsCollection = bitesPlus.collection("foodCollection");
 
@@ -59,18 +69,17 @@ async function run() {
       const token = jwt.sign(user, process.env.Access_Token_Secret, {
         expiresIn: "1hr",
       });
-      res.cookie("access_token", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-      });
+      res.cookie("access_token", token, cookieOption);
       res.send({ status: true });
     });
 
     //clear token on sign out
     app.post("/signout", async (req, res) => {
+      console.log("signout");
       const user = req.body;
-      res.clearCookie("access_token", { maxAge: 0 }).send({ status: true });
+      res
+        .clearCookie("access_token", { ...cookieOption, maxAge: 0 })
+        .send({ status: true });
     });
 
     // foods apis
@@ -86,7 +95,6 @@ async function run() {
           projection: {
             additionalNotes: 0,
             donatorUID: 0,
-            donatorPhotoURL: 0,
             _id: 0,
           },
         };
@@ -171,6 +179,18 @@ async function run() {
         $set: updatedData,
       };
       const result = await foodsCollection.updateOne(filter, updateQuery);
+      res.send(result);
+    });
+
+    // cancel food request
+    app.patch("/food/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDocument = {
+        $unset: { requestDate: "", requesterEmail: "", requesterNote: "" },
+        $set: { foodStatus: "Available" },
+      };
+      const result = await foodsCollection.updateOne(query, updateDocument);
       res.send(result);
     });
 
