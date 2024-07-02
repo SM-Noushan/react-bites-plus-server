@@ -14,6 +14,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://ph-assignment-11-bites-plus-spa.surge.sh",
+      "https://bitesplus-by-sm-nowshan.surge.sh",
     ],
     credentials: true,
   })
